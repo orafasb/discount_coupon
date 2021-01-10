@@ -1,5 +1,5 @@
 
-# Discouunt Coupon Microservice API
+# Discount Coupon Microservice API
 
 #### Discount Coupon Microservice by Rafael Bordignon written in Typescript
 
