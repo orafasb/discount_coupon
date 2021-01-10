@@ -1,0 +1,10 @@
+node_modules
+dist
+coverage
+globalConfig.json
+.vscode/
+docker/mongo/data/
+.env
+yarn-error.log
+yarn.lock
+*.zip

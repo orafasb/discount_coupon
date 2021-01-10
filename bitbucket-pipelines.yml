@@ -1,0 +1,74 @@
+image: atlassian/default-image:2
+
+pipelines:
+  branches:
+    dev:
+      - step:
+          name: "Testing staging"
+          image: node:12.19.0
+          script:
+            - npm install
+            - npm test
+          services:
+            - mongo
+      - step:
+          name: "Build to staging"
+          image: node:12.19.0
+          script:
+            - apt-get update && apt-get install -y zip
+            - rm -rf /var/lib/apt/lists/*
+            - npm install
+            - npm run dist
+          artifacts:
+            - medprev-coupon.zip
+      - step:
+          name: "Deploy to staging"
+          deployment: staging
+          script:
+            - pipe: atlassian/aws-elasticbeanstalk-deploy:0.6.6
+              variables:
+                AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+                AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+                AWS_DEFAULT_REGION: "sa-east-1"
+                APPLICATION_NAME: $AWS_APPLICATION_NAME_STG
+                ENVIRONMENT_NAME: $AWS_ENVIRONMENT_NAME_STG
+                S3_BUCKET: $S3_BUCKET
+                ZIP_FILE: "$FILE_ZIP"
+                VERSION_LABEL: "v-${BITBUCKET_COMMIT:0:8}"
+    master:
+      - step:
+          name: "Testing production"
+          image: node:12.19.0
+          script:
+            - npm install
+            - npm test
+          services:
+            - mongo
+      - step:
+          name: "Build to production"
+          image: node:12.19.0
+          script:
+            - apt-get update && apt-get install -y zip
+            - rm -rf /var/lib/apt/lists/*
+            - npm install
+            - npm run dist
+          artifacts:
+            - medprev-coupon.zip
+      - step:
+          name: "Deploy to production"
+          deployment: production
+          script:
+            - pipe: atlassian/aws-elasticbeanstalk-deploy:0.6.6
+              variables:
+                AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+                AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+                AWS_DEFAULT_REGION: "sa-east-1"
+                APPLICATION_NAME: $AWS_APPLICATION_NAME_PROD
+                ENVIRONMENT_NAME: $AWS_ENVIRONMENT_NAME_PROD
+                S3_BUCKET: $S3_BUCKET
+                ZIP_FILE: "$FILE_ZIP"
+                VERSION_LABEL: "v-${BITBUCKET_COMMIT:0:8}"
+definitions:
+  services:
+    mongo:
+      image: mongo:4.4
